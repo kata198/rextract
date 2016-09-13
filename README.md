@@ -31,7 +31,7 @@ Example
 
 Example, extract all the usernames and UIDs from /etc/passwd of folks who use "/bin/bash" as their shell, and reformat it.
 
-	cat /etc/passwd | rextract '^(?P<username>[^:]+)[:][^:]*[:](?P<uid>[\d]+)' '${username} [${uid}]'
+	cat /etc/passwd | rextract '^(?P<username>[^:]+)[:][^:]*[:](?P<uid>[\d]+).*/bin/bash$' '${username} [${uid}]'
 
 Explaned Expression:
 
@@ -40,16 +40,13 @@ Explaned Expression:
 * Then comes 0 or more characters which are not colon ':'
 * Then comes a colon
 * Second group is named "uid", and contains one or more digits.
+* Then, match 0 or more characters
+* Then, match the string "/bin/bash" at the end of the line ( represented by '$' )
 
 Our output is the username, followed by square brackets enclosing the uid.
 
 Example output:
 
-	root [0]
-	bin [1]
-	daemon [2]
-	mail [8]
-	ftp [14]
-	http [33]
-	uuidd [68]
-	dbus [81]
+	joe55 [1000]
+	tjoseph [1009]
+	james [1011]
