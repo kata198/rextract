@@ -1,0 +1,178 @@
+#!/usr/bin/env python
+'''
+    rextract - Regular expression string EXTRACTion.
+
+    Copyright (c) 2016 Tim Savannah All Rights Reserved
+
+    Licensed for use under terms of the Gnu General Public License (GPL) Version 3 or Later
+'''
+
+import sys
+import re
+
+def usage():
+    sys.stderr.write('''Usage: rextract (Options) [reg pattern] ([Output Str])
+  Reads from stdin and applies regex pattern line-by-line.
+
+    Options:
+
+        --debug     Enable debug mode
+
+If output str is provided, will output the variables/groups captured in the regex pattern.
+
+Each pattern contained within parenthesis counts as a group.
+Name a group like: (?P<name>.*)
+
+Use ${1} or $1 for first group, use ${name} or $name for a name [ defined like (?P<name>.*) ]
+Use ${0} or $0 for entire matched string.
+
+NOTE: Make sure to single-quote the "output str" or escape dollar [$] signs!
+''')
+
+
+# isDebug - Global "Debug" flag. Will print extra info.
+isDebug = False
+
+class MatchPrinter(object):
+    '''
+        MatchPrinter - Main class for dealing with matching and printing
+    '''
+
+    def __init__(self, matchStr):
+        '''
+            __init__ - Construct.
+
+            @param matchStr <str> - The requested output match string (see #usage method for format).
+        '''
+        self.matchStr = matchStr
+
+        self.printNames = []
+        self.printGroups = []
+        if matchStr:
+            matchNames = re.findall('[$][\{]{0,1}(?P<name>[a-zA-Z0-9_]+)[\}]{0,1}', matchStr)
+            for name in matchNames:
+                if name.isdigit():
+                    self.printGroups.append(int(name))
+                else:
+                    self.printNames.append(name)
+
+            self.printGroups = list(set(self.printGroups))
+            self.printNames = list(set(self.printNames))
+                
+
+    def printMatchStr(self, matchObj):
+        '''
+            printMatchStr - Print a match, formatted to "matchStr" as provided in __init__
+
+            @param matchObj <SRE_Match object> - A match object
+        '''
+
+        line = matchObj.string
+        matchStr = self.matchStr
+
+        global isDebug
+
+        if not matchStr:
+            print ( line )
+            return
+
+        for printGroup in self.printGroups:
+            try:
+                toReplace = r'[$][\{]{0,1}%d[\}]{0,1}' %(printGroup,)
+                if printGroup == 0:
+                    replaceWith = matchObj.string[matchObj.start() : matchObj.end()]
+                else:
+                    replaceWith = matchObj.groups()[printGroup-1]
+
+                matchStr = re.sub(toReplace, replaceWith, matchStr)
+            except Exception as e:
+                if isDebug is True:
+                    sys.stderr.write('DEBUG: Got exception replacing ${%d} : %s\n' %(printGroup, str(e)))
+
+        groupDict = matchObj.groupdict()
+
+        for printName in self.printNames:
+            try:
+                toReplace = r'[$][\{]{0,1}%s[\}]{0,1}' %(printName, )
+
+                if printName in groupDict:
+                    replaceWith = groupDict[printName]
+                else:
+                    replaceWith = ''
+                    if isDebug is True:
+                        sys.stderr.write('DEBUG: No group found matching name: %s\n' %(printName,))
+
+                matchStr = re.sub(toReplace, replaceWith, matchStr)
+
+            except Exception as e:
+                if isDebug is True:
+                    sys.stderr.write('DEBUG: Got exception replacing ${%s} : %s\n' %(printName, str(e)))
+
+        print ( matchStr )
+            
+
+
+if __name__ == '__main__':
+
+    try:
+
+        args = sys.argv[1:]
+
+        if '--debug' in args:
+            args.remove('--debug')
+            isDebug = True
+
+        if '--help' in args or len(args) < 1:
+            usage()
+            sys.exit(1)
+
+        pattern = args[0]
+
+        # Match anywhere in the line, unless explicitly matching beginning of line
+        if not pattern.startswith('^'):
+            pattern = '.*' + pattern
+
+        try:
+            regex = re.compile(pattern)
+        except Exception as e:
+            sys.stderr.write('Cannot compile pattern: "%s" (%s)\n' %(regex, str(e)))
+            sys.exit(2)
+
+        if len(args) == 1:
+            matchStr = ''
+        else:
+            matchStr = ' '.join(args[1:])
+            if not matchStr:
+                sys.stderr.write('Warning: match string provided but empty. Did you forget to use single-quotes or escape $?\n')
+
+        matchPrinter = MatchPrinter(matchStr)
+
+        try:
+            _readline = sys.stdin.buffer.readline
+            defaultEncoding = sys.getdefaultencoding()
+            def readline():
+                line = _readline()
+                return line.decode(defaultEncoding)
+                
+        except AttributeError:
+            readline = _readline = sys.stdin.readline
+
+        line = None
+        while True:
+            try:
+                line = readline()
+            except UnicodeDecodeError as ude:
+                if isDebug:
+                    sys.stderr.write("Couldn't decode line: %s\n" %(str(ude),))
+                continue
+
+            if line in (b'', ''):
+                break
+
+            matchObj = regex.match(line)
+            if matchObj:
+                matchPrinter.printMatchStr(matchObj)
+
+        sys.exit(0)
+    except KeyboardInterrupt:
+        pass
