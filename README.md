@@ -39,7 +39,7 @@ Explaned Expression:
 * Then comes a colon ':'
 * Then comes 0 or more characters which are not colon ':'
 * Then comes a colon
-* Second group is named "uid", and contains at least 1 character and all characters that are not ':'.
+* Second group is named "uid", and contains one or more digits.
 
 Our output is the username, followed by square brackets enclosing the uid.
 
