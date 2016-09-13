@@ -49,6 +49,7 @@ class MatchPrinter(object):
         self.printNames = []
         self.printGroups = []
         if matchStr:
+            self.matchStr = matchStr = matchStr.replace("\\t", "\t")
             matchNames = re.findall(r'[$][\{]{0,1}(?P<name>[a-zA-Z0-9_]+)[\}]{0,1}', matchStr)
             for name in matchNames:
                 if name.isdigit():
