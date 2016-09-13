@@ -10,6 +10,9 @@
 import sys
 import re
 
+__version__ = '0.1.0'
+__version_tuple__ = (0, 1, 0)
+
 def usage():
     sys.stderr.write('''Usage: rextract (Options) [reg pattern] ([Output Str])
   Reads from stdin and applies regex pattern line-by-line.
@@ -17,6 +20,7 @@ def usage():
     Options:
 
         --debug     Enable debug mode
+        --version   Print version and exit
 
 If output str is provided, will output the variables/groups captured in the regex pattern.
 
@@ -122,6 +126,10 @@ if __name__ == '__main__':
         if '--debug' in args:
             args.remove('--debug')
             isDebug = True
+
+        if '--version' in args:
+            sys.stderr.write('\nrextract version %s by Tim Savannah\n\n' %(__version__, ))
+            sys.exit(0)
 
         if '--help' in args or len(args) < 1:
             usage()
