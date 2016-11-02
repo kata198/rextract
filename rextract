@@ -144,7 +144,7 @@ if __name__ == '__main__':
         try:
             regex = re.compile(pattern)
         except Exception as e:
-            sys.stderr.write('Cannot compile pattern: "%s" (%s)\n' %(regex, str(e)))
+            sys.stderr.write('Cannot compile pattern: "%s" (%s)\n' %(pattern, str(e)))
             sys.exit(2)
 
         if len(args) == 1:
