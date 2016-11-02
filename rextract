@@ -1,17 +1,22 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
     rextract - Regular expression string EXTRACTion.
 
     Copyright (c) 2016 Tim Savannah All Rights Reserved
 
     Licensed for use under terms of the Gnu General Public License (GPL) Version 3 or Later
+
+    Running under python3 is better, you'll get better error messages from the regex engine
 '''
 
+import math
 import sys
+import shutil
+import subprocess
 import re
 
-__version__ = '0.1.0'
-__version_tuple__ = (0, 1, 0)
+__version__ = '0.2.0'
+__version_tuple__ = (0, 2, 0)
 
 def usage():
     sys.stderr.write('''Usage: rextract (Options) [reg pattern] ([Output Str])
@@ -63,7 +68,7 @@ class MatchPrinter(object):
 
             self.printGroups = list(set(self.printGroups))
             self.printNames = list(set(self.printNames))
-                
+
 
     def printMatchStr(self, matchObj):
         '''
@@ -114,7 +119,173 @@ class MatchPrinter(object):
                     sys.stderr.write('DEBUG: Got exception replacing ${%s} : %s\n' %(printName, str(e)))
 
         print ( matchStr )
-            
+
+
+
+
+def strToBlocks(toConvert, blockSize):
+    '''
+        strToBlocks - Split a string into blocks, of max #blockSize
+
+        @param toConvert <str> - String to convert
+        @param blockSize <int> - Max number of items per block
+
+        @return - List of the string split up into blocks.
+    '''
+    ret = []
+    i = 0
+    lastI = 0
+    toConvertLen = len(toConvert)
+    if toConvertLen == 0:
+        return ['']
+
+    while i < toConvertLen:
+        i += blockSize
+
+        ret.append( toConvert[lastI : i] )
+
+        lastI = i
+
+
+    return ret
+
+
+# Python3 seems to support this, and may work on windoze..
+if hasattr(shutil, 'get_terminal_size'):
+    def getNumColsTerminal():
+        '''
+            getNumColsTerminal - Gets number of columns in terminal window
+        '''
+        return shutil.get_terminal_size()[0]
+else:
+    # These only work on linux/unix systems, and probably cygwin
+    def getNumColsTerminal():
+        '''
+            getNumColsTerminal - Gets number of columns in terminal window,
+                or None if cannot determine.
+        '''
+        # Try tput first
+        contents = None
+        ret = 127
+        try:
+            pipe = subprocess.Popen('tput cols', shell=True, stdout=subprocess.PIPE)
+            contents = pipe.stdout.read().decode('ascii')
+            ret = pipe.wait()
+        except:
+            pass
+
+        if ret == 0 and contents:
+            return int(contents.strip())
+
+        # Otherwise, try stty size
+        contents = None
+        ret = 127
+        try:
+            pipe = subprocess.Popen('stty size', shell=True, stdout=subprocess.PIPE)
+            contents = pipe.stdout.read().decode('ascii')
+            ret = pipe.wait()
+        except:
+            pass
+
+        if ret == 0 and contents:
+            # stty returns rows[space]cols
+            return int(contents.strip().split(' ')[1])
+
+        # Could not determine
+        return None
+
+def handleParseError(pattern, exception):
+    '''
+        handleParseError - Print the error, and then print the pattern
+          with a caret ( ^ ) pointing at the error position.
+
+          This only works in python3, as python2's regex engine doesn't specify an error offset
+
+        @param pattern <str> - String of regex pattern
+        @param exception <Exception> - exception raised when compiling pattern
+
+    '''
+
+    # On python 3 (and maybe eventually backported to 2.7, though not yet
+    #  as of 2.7.12 ) the regex engine reports position of syntax error
+    posRE = re.compile('.*at position (?P<pos>[\d]+)')
+
+    exceptionMsg = str(exception)
+
+    try:
+        errorPos = int(posRE.match(exceptionMsg).groupdict()['pos'])
+    except:
+        # Could not extract a number, so just print error message and pattern.
+        sys.stderr.write('\nERR: Cannot compile pattern: %s\n\n%s\n' %(exceptionMsg, pattern))
+        return
+
+
+    foundCols = getNumColsTerminal()
+    if foundCols:
+        numCols = foundCols
+    else:
+        # If we couldn't determine number of columns, assume 80.
+        numCols = 80
+
+    # Give us a little buffer room on the right
+    numCols -= 4
+
+    if numCols <= 12:
+        # Some very small window here, just give up.
+        sys.stderr.write('\nERR: Cannot compile pattern: %s\n\n%s\n' %(exceptionMsg, pattern))
+        return
+
+
+    # Split up our lines so they fit in the available columns
+    blockedPattern = strToBlocks(pattern, numCols)
+
+    # Discover which line contains the error
+    lineContainingError = math.floor(errorPos / numCols)
+    if float(lineContainingError) == float(errorPos) / float(numCols):
+        # If this is true, we are actually on the last character of line.
+        #  or, we are on the first character of the first line (hence the min)
+        lineContainingError = min(lineContainingError - 1, 0)
+
+    i = 0
+
+    write = sys.stderr.write
+
+    # Show error on first line
+    write('\nERR: Cannot compile pattern: %s\n\n' %(exceptionMsg,))
+
+    # Lines before the one containing error
+    while i < lineContainingError:
+        write(blockedPattern[i])
+        write('\n')
+        i += 1
+
+    # Caret points to this upcoming line
+    if errorPos == 0:
+        caretPos = 0
+    else:
+        caretPos = errorPos % numCols
+        if caretPos == 0:
+            caretPos = len(blockedPattern[i])
+
+    write(blockedPattern[i])
+    write('\n')
+    write(' ' * ( caretPos - 1))
+    write('^')
+    write('\n')
+
+    i += 1
+
+    # If we have lines after this, give some padding so arrow is obvious
+    if i < len(blockedPattern):
+        write('\n')
+
+    # Lines after error
+    while i < len(blockedPattern):
+        write(blockedPattern[i])
+        write('\n')
+        i += 1
+
+    write('\n')
 
 
 if __name__ == '__main__':
@@ -144,7 +315,8 @@ if __name__ == '__main__':
         try:
             regex = re.compile(pattern)
         except Exception as e:
-            sys.stderr.write('Cannot compile pattern: "%s" (%s)\n' %(pattern, str(e)))
+            handleParseError(pattern, e)
+#            sys.stderr.write('Cannot compile pattern: "%s" (%s)\n' %(pattern, str(e)))
             sys.exit(2)
 
         if len(args) == 1:
@@ -162,7 +334,7 @@ if __name__ == '__main__':
             def readline():
                 line = _readline()
                 return line.decode(defaultEncoding)
-                
+
         except AttributeError:
             readline = _readline = sys.stdin.readline
 
