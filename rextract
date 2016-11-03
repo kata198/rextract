@@ -86,20 +86,34 @@ class MatchPrinter(object):
             print ( line )
             return
 
+        groupDict = matchObj.groupdict()
+        orderedGroups = list(matchObj.groups())
+
+        # Any unmatched but present keys (like entire group is in an "or" 
+        #   condition within expression), replace with empty string.
+        for key in groupDict:
+            if groupDict[key] is None:
+                groupDict[key] = ''
+
+        for i in range(len(orderedGroups)):
+            if orderedGroups[i] is None:
+                orderedGroups[i] = ''
+
+        orderedGroups = tuple(orderedGroups)
+
         for printGroup in self.printGroups:
             try:
                 toReplace = r'[$][\{]{0,1}%d[\}]{0,1}' %(printGroup,)
                 if printGroup == 0:
                     replaceWith = matchObj.string[matchObj.start() : matchObj.end()]
                 else:
-                    replaceWith = matchObj.groups()[printGroup-1]
+                    replaceWith = orderedGroups[printGroup-1]
 
                 matchStr = re.sub(toReplace, replaceWith, matchStr)
             except Exception as e:
                 if isDebug is True:
                     sys.stderr.write('DEBUG: Got exception replacing ${%d} : %s\n' %(printGroup, str(e)))
 
-        groupDict = matchObj.groupdict()
 
         for printName in self.printNames:
             try:
