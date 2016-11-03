@@ -142,7 +142,7 @@ Filter explanation:
 * This time, split the first letter of "upgraded" and "installed" into its own group, "action".
 * Ensure that following the "action" letter is the remainder of the word. Note, in theory this could match 'ipgraded' or 'unstalled', but with this given data, it won't. However, in other cases, it might. For those cases, we can match with an "or" condition, and use two groups (you cannot repeat group names, even in an "or" condition):
 
-	./rextract '^(\[2016-11-02).*[ ](((?P<a1>[u])pgraded)|((?P<a2>[i])nstalled))[ ](?P<name>[^ ]+)[ ][\(](.+[\-][>][ ]){0,1}(?P<final_version>.+)[\)]$' '$name - $final_version [${a1}${a2}]' < /var/log/pacman.log
+		./rextract '^(\[2016-11-02).*\[ ](((?P<a1>[u])pgraded)|((?P<a2>[i])nstalled))[ ](?P<name>[^ ]+)[ ][\(](.+[\-][>][ ]){0,1}(?P<final_version>.+)[\)]$' '$name - $final_version [${a1}${a2}]' < /var/log/pacman.log
 
 So here, note that we no longer can match "ipgraded" or "unstalled". When a group is present in the pattern string, but does not appear in a matched group, its value is assigned as an empty string. Thus, where we used "$action" in the simpler form, we now use "${a1}${a2}", as only one will hold a value ('u' or 'i'), and the other will be blank.
 
