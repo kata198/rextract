@@ -1,4 +1,5 @@
-# rextract
+rextract
+========
 
 rextract is a commandline tool used to extract strings using regular exressions. 
 
@@ -10,25 +11,35 @@ Usage
 -----
 
 	Usage: rextract (Options) [reg pattern] ([Output Str])
+
 		Reads from stdin and applies regex pattern line-by-line.
+
 
 		Options:
 
-			--debug     Enable debug mode
+
+			\-\-debug     Enable debug mode
 
 	If output str is provided, will output the variables/groups captured in the regex pattern.
 
+
 	Each pattern contained within parenthesis counts as a group.
+
 	Name a group like: (?P<name>.*)
 
+
 	Use ${1} or $1 for first group, use ${name} or $name for a name [ defined like (?P<name>.*) ]
+
 	Use ${0} or $0 for entire matched string.
+
 
 	NOTE: Make sure to single-quote the "output str" or escape dollar [$] signs!
 
 
+
 Examples
 --------
+
 
 *passwd file*
 
@@ -40,8 +51,11 @@ Example, extract all the usernames and UIDs from /etc/passwd of folks who use "/
 Example output:
 
 	joe55 [1000]
+
 	tjoseph [1009]
+
 	james [1011]
+
 
 
 Explained Expression:
@@ -69,11 +83,17 @@ Example, extract a sorted list of all pacman (archlinux) packages updated/instal
 Sample Output:
 
 	asciidoc (8.6.9-3)
+
 	accerciser (3.14.0-4 -> 3.22.0-1)
+
 	accountsservice (0.6.42-1 -> 0.6.43-1)
+
 	adwaita-icon-theme (3.20-2 -> 3.22.0-1)
+
 	aisleriot (3.20.2-1 -> 3.22.0+5+gb3024a2-1)
+
 	akonadi-qt4 (1.13.0-10 -> 1.13.0-11)
+
 
 
 Explanation:
@@ -82,13 +102,21 @@ Here's a few sample lines from pacman.log:
 
 
 	[2016-11-02 16:45] [ALPM] installed asciidoc (8.6.9-3)
+
 	[2016-11-02 22:42] [ALPM] upgraded tali (3.20.0-2 -> 3.22.0-1)
+
 	[2016-11-02 22:42] [ALPM] upgraded totem (3.20.1-1 -> 3.22.0+5+ge0bf46e-1)
+
 	[2016-11-02 22:42] [ALPM] warning: directory permissions differ on /etc/unrealircd/
+
 	filesystem: 700  package: 755
+
 	[2016-11-02 22:42] [ALPM] warning: directory permissions differ on /etc/unrealircd/aliases/
+
 	filesystem: 700  package: 755
+
 	[2016-11-02 22:42] [ALPM] upgraded unrealircd (4.0.6-1 -> 4.0.7-1)
+
 
 
 As you can see, there's a lot of information here, some relevant, some not.
@@ -126,11 +154,17 @@ This is accomplished with the following:
 Sample output:
 
 	asciidoc = 8.6.9-3 [i]
+
 	vim = 8.0.0055-1 [u]
+
 	vim-runtime = 8.0.0055-1 [u]
+
 	yelp = 3.22.0+1+gfabd8eb-1 [u]
+	
 	yelp-tools = 3.18.0+1+g193c2bd-1 [u]
+
 	yelp-xsl = 3.20.1-2 [u]
+
 
 
 Here we show the package name, the final version, and a marker if it was an install or an upgrade ( [i] == install, [u] == upgrade ).
