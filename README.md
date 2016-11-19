@@ -1,10 +1,12 @@
 # rextract
 
-rextract is a commandline tool used to extract strings using regular exressions. 
+rextract is a powerful commandline tool to extract and manipulate strings using regular exressions.
 
-Think of it like "sed" or "grep", but it outputs and arranges the match, not just output / replace the line.
+Think of it somewhat similar to "sed" or "grep", except it gives you complete control to rearrange/omit/duplicate
 
-It supports python extended regular expressions.
+the output, so far as regular expressions support.
+
+It supports python extended regular expressions (compatible with perl-style).
 
 Usage
 -----
