@@ -1,0 +1,8 @@
+include README.md
+include README.rst
+include setup.py
+include rextract
+include ChangeLog
+include LICENSE
+include MANIFEST.in
+include .gitignore
