@@ -1,0 +1,32 @@
+* 1.0.0 - Nov 19 2016
+- Add setup.py, MANIFEST.in, README.rst to prepare for pypi distribution
+- Expand READMEs to contain a lot more info, better formatting, etc
+- Greatly expand usage (and include expanded version in the READMEs) which go
+in-depth on usage, and where to find more information on writing the
+expressions.
+- Rename arguments to be more clear, and associated variables.
+- Change what happens when ${0} is provided, or no "Output Format" is
+provided: before it printed the entire line when matched. This is what grep
+already does, so it has no additional value. Instead, it now prints just the
+matched section (including the implicit .* at the start, should "^" or .* not
+be present at the beginning of the line). TODO: This should probably change to
+only match the specified section.
+- Only accept group names which start with a-z, A-Z, or _ (i.e. don't allow
+0-9 at start). It's not supported anyway, and conflicts with group
+enumeration.
+- Move version info into a function, and include version info and author at
+bottom of "usage" (--help).
+
+* 0.2.0 - Nov 03 2016
+- Add missing tab that was messing up formatting
+- Update and expand README to contain more examples and such
+- For groups that are not matched (like those contained only within a
+conditional "OR", for example), replace the value with an empty string. This
+prevents trying to insert "None" if referenced in the output string.
+- When a regex fails to parse and we have enough information, output the RE
+and an error pointing to the location of the error (followed by the error
+message itself)
+- Fix some typos
+
+* 0.1.0 - Sep 12 2016
+- Initial Release
