@@ -15,8 +15,8 @@ import shutil
 import subprocess
 import re
 
-__version__ = '0.2.0'
-__version_tuple__ = (0, 2, 0)
+__version__ = '1.0.0'
+__version_tuple__ = (1, 0, 0)
 
 def usage():
     sys.stderr.write('''Usage: rextract (Options) [reg pattern] ([Output Str])
