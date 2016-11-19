@@ -6,3 +6,5 @@ dist/
 build/
 myenv*/
 *.egg-info
+__pycache__/
+*.sw[po]
