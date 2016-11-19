@@ -37,7 +37,7 @@ Usage
 	Regex Pattern Format/Tips:
 	==========================
 
-		rextract supports extended regular expression syntax (perl-style), specifically
+		rextract supports extended regular expression syntax (python/perl-style), specifically
 		that provided by the standard python "re" module.
 		Some examples can be found at https://docs.python.org/3/howto/regex.html
 
@@ -57,11 +57,14 @@ Usage
 		 and must only contain letters a-z (any case), numbers 0-9, or underscore.
 		Name a group like: (?P<name>.*)
 
-		If the regex does not start with "^" (starts-with operator) or ".*", a
-		 ".*" is implicitly prepended to the regex. This ensures that if your
-		 pattern defines a match in the middle of a line, it will still match
-		 as expected.
-		 
+
+		The regular expression will match at any point within the line, unless
+		'^' (start of line) or '$' (end of line) are present, in which case it
+		will have to match with those restrictions.
+
+		Thus, there is no need to prefix with '.*' to be able to match somewhere
+		in the center.
+
 
 	Output Format
 	=============

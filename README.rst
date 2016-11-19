@@ -54,7 +54,7 @@ Usage
 
 	\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=
 
-		rextract supports extended regular expression syntax (perl-style), specifically
+		rextract supports extended regular expression syntax (python/perl-style), specifically
 
 		that provided by the standard python "re" module.
 
@@ -86,15 +86,17 @@ Usage
 		Name a group like: (?P<name>.*)
 
 
-		If the regex does not start with "^" (starts-with operator) or ".*", a
+		The regular expression will match at any point within the line, unless
 
-		 ".*" is implicitly prepended to the regex. This ensures that if your
+		'^' (start of line) or '$' (end of line) are present, in which case it
 
-		 pattern defines a match in the middle of a line, it will still match
+		will have to match with those restrictions.
 
-		 as expected.
 
-		 
+		Thus, there is no need to prefix with '.*' to be able to match somewhere
+
+		in the center.
+
 
 	Output Format
 

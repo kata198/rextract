@@ -73,10 +73,13 @@ def usage():
      and must only contain letters a-z (any case), numbers 0-9, or underscore.
     Name a group like: (?P<name>.*)
 
-    If the regex does not start with "^" (starts-with operator) or ".*", a
-     ".*" is implicitly prepended to the regex. This ensures that if your
-     pattern defines a match in the middle of a line, it will still match
-     as expected.
+
+    The regular expression will match at any point within the line, unless
+    '^' (start of line) or '$' (end of line) are present, in which case it
+    will have to match with those restrictions.
+
+    Thus, there is no need to prefix with '.*' to be able to match somewhere
+    in the center.
      
 
  Output Format
@@ -154,11 +157,14 @@ class MatchPrinter(object):
             self.outputFormat = outputFormat = outputFormat.replace("\\t", "\t")
             # A valid group name starts with a-z or A-Z or _, then may contain those or in addition 0-9 for
             #  following characters.
-            matchNames = re.findall(r'[$][\{]{0,1}(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)[\}]{0,1}', outputFormat)
+            matchNames = re.findall(r'[$][\{]{0,1}(?P<name>[a-zA-Z0-9_]+)[\}]{0,1}', outputFormat)
             for name in matchNames:
                 if name.isdigit():
                     self.printGroups.append(int(name))
                 else:
+                    if name[0].isdigit():
+                        sys.stderr.write('ERR: Group names cannot start with a number. Must start with a-z, A-Z, or _.\n')
+                        sys.exit(1)
                     self.printNames.append(name)
 
             self.printGroups = list(set(self.printGroups))
@@ -178,7 +184,7 @@ class MatchPrinter(object):
         global isDebug
 
         if not outputFormat:
-            print ( matchObj.string[matchObj.start() : matchObj.end()] )
+            print ( matchObj.groups()[0] )
             return
 
         groupDict = matchObj.groupdict()
@@ -201,8 +207,9 @@ class MatchPrinter(object):
                 toReplace = r'[$][\{]{0,1}%d[\}]{0,1}' %(printGroup,)
                 if printGroup == 0:
                     replaceWith = matchObj.string[matchObj.start() : matchObj.end()]
+                    replaceWith = orderedGroups[0]
                 else:
-                    replaceWith = orderedGroups[printGroup-1]
+                    replaceWith = orderedGroups[printGroup]
 
                 outputFormat = re.sub(toReplace, replaceWith, outputFormat)
             except Exception as e:
@@ -310,7 +317,10 @@ def handleParseError(pattern, exception):
 
           This only works in python3, as python2's regex engine doesn't specify an error offset
 
-        @param pattern <str> - String of regex pattern
+        @param pattern <str> - String of regex pattern.
+          It makes more sense on failure to recompile the original pattern and pass that exception
+          plus the original pattern. Otherwise, may confuse users.
+
         @param exception <Exception> - exception raised when compiling pattern
 
     '''
@@ -419,15 +429,25 @@ if __name__ == '__main__':
 
         pattern = args[0]
 
-        # Match anywhere in the line, unless explicitly matching beginning of line
-        if not pattern.startswith('^'):
-            pattern = '.*' + pattern
+        origPattern = pattern[:]
 
+        pattern = ''.join(['(', pattern, ')'])
+
+        # Try to compile the pattern. If we fail, recompile with the original
+        #  pattern, and pass to "handleParseError", where we will output the
+        #  entire RE, and point to the location of the error.
         try:
             regex = re.compile(pattern)
-        except Exception as e:
-            handleParseError(pattern, e)
-            sys.exit(EXIT_CODE_CANT_COMPILE_REGEX)
+        except Exception as failedParseModifiedException:
+            try:
+                regex = re.compile(origPattern)
+            except Exception as failedParseOrigException:
+                handleParseError(origPattern, failedParseOrigException)
+                sys.exit(EXIT_CODE_CANT_COMPILE_REGEX)
+
+            sys.stderr.write('WARNING: Failed to parse modified regex, but original parsed?\n')
+            sys.stderr.write('  Please submit bug report at https://github.com/kata198/rextract\n\n')
+            handleParseError(pattern, failedParseModifiedException)
 
         if len(args) == 1:
             outputFormat = ''
@@ -461,7 +481,7 @@ if __name__ == '__main__':
             if line in (b'', ''):
                 break
 
-            matchObj = regex.match(line)
+            matchObj = regex.search(line)
             if matchObj:
                 matchPrinter.printMatchStr(matchObj)
 

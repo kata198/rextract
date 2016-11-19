@@ -7,15 +7,18 @@ expressions.
 - Rename arguments to be more clear, and associated variables.
 - Change what happens when ${0} is provided, or no "Output Format" is
 provided: before it printed the entire line when matched. This is what grep
-already does, so it has no additional value. Instead, it now prints just the
-matched section (including the implicit .* at the start, should "^" or .* not
-be present at the beginning of the line). TODO: This should probably change to
-only match the specified section.
+already does, so it has no additional value.
+ Instead, it now prints just the matched section (from start of provided regex
+ to end of matched zone)
+
 - Only accept group names which start with a-z, A-Z, or _ (i.e. don't allow
 0-9 at start). It's not supported anyway, and conflicts with group
 enumeration.
 - Move version info into a function, and include version info and author at
 bottom of "usage" (--help).
+- Do not implicitly load .* in front of most patterns, instead use a better
+way of regex searching which supports the match starting at any point in the
+chain.
 
 * 0.2.0 - Nov 03 2016
 - Add missing tab that was messing up formatting
