@@ -79,7 +79,7 @@ Usage
 			${my_group_name}
 
 
-		A group must start with a letter a-z or underscore ( ' _' ),
+		A group must start with a letter a-z or underscore ( '_' ),
 
 		 and must only contain letters a-z (any case), numbers 0-9, or underscore.
 
@@ -96,6 +96,23 @@ Usage
 		Thus, there is no need to prefix with '.*' to be able to match somewhere
 
 		in the center.
+
+
+        If a line fails to match, it will not be provided to for use as output,
+
+         it will just be silently skipped. You cannot logically format output
+
+         from an unknown input.
+
+
+       You can specify a "NOT" within your pattern by starting a group with a caret ( '^' )
+
+        For example, to match that a line does not start with a semicolon, you can use a
+
+        pattern line:
+
+
+          ^([^;].*)
 
 
 	Output Format
@@ -272,8 +289,14 @@ So the filter expression says:
 And our output expression just contains the 'what' portion.
 
 
+*Strip Comments*
 
-More Advanced:
+To strip comments from a file, where a "comment" is defined by the character ';' and everything following on a given line:
+
+cat myFile.ini | rextract '(?P<valid>[^;]\*)' > myFile.ini.stripped
+
+
+*More Advanced:*
 
 
 Okay, so now let's get more advanced. We want to produce a report that lists what software installations happened today,
