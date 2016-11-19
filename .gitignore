@@ -1,0 +1,7 @@
+*~
+*.bak
+*.orig
+*.py[co]
+dist/
+build/
+myenv*/
