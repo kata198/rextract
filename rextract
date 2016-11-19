@@ -184,7 +184,7 @@ class MatchPrinter(object):
         global isDebug
 
         if not outputFormat:
-            print ( matchObj.groups()[0] )
+            sys.stdout.write ( matchObj.groups()[0] )
             return
 
         groupDict = matchObj.groupdict()
@@ -234,7 +234,7 @@ class MatchPrinter(object):
                 if isDebug is True:
                     sys.stderr.write('DEBUG: Got exception replacing ${%s} : %s\n' %(printName, str(e)))
 
-        print ( outputFormat )
+        sys.stdout.write ( outputFormat )
 
 
 
