@@ -18,6 +18,10 @@ import re
 __version__ = '1.0.0'
 __version_tuple__ = (1, 0, 0)
 
+def getVersionInfo():
+    return 'rextract version %s by Tim Savannah' %(__version__, )
+
+
 def usage():
     sys.stderr.write('''Usage: rextract (Options) [reg pattern] ([Output Str])
   Reads from stdin and applies regex pattern line-by-line.
@@ -37,6 +41,7 @@ Use ${0} or $0 for entire matched string.
 
 NOTE: Make sure to single-quote the "output str" or escape dollar [$] signs!
 ''')
+    sys.stderr.write('\n%s\n\n' %(getVersionInfo(), ))
 
 
 # isDebug - Global "Debug" flag. Will print extra info.
@@ -313,7 +318,7 @@ if __name__ == '__main__':
             isDebug = True
 
         if '--version' in args:
-            sys.stderr.write('\nrextract version %s by Tim Savannah\n\n' %(__version__, ))
+            sys.stderr.write('%s\n\n' %(getVersionInfo(), ))
             sys.exit(0)
 
         if '--help' in args or len(args) < 1:
