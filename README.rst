@@ -10,31 +10,162 @@ It supports python extended regular expressions.
 Usage
 -----
 
-	Usage: rextract (Options) [reg pattern] ([Output Str])
+	Usage: rextract (Options) [regex pattern] ([output format])
 
-		Reads from stdin and applies regex pattern line-by-line.
+		Reads from stdin and applies provided regex pattern line-by-line,
 
-
-		Options:
-
-
-			\-\-debug     Enable debug mode
-
-	If output str is provided, will output the variables/groups captured in the regex pattern.
+		optionally outputting in a format specified by "output format."
 
 
-	Each pattern contained within parenthesis counts as a group.
+	Options:
 
-	Name a group like: (?P<name>.*)
-
-
-	Use ${1} or $1 for first group, use ${name} or $name for a name [ defined like (?P<name>.*) ]
-
-	Use ${0} or $0 for entire matched string.
+	\=\=\=\=\=\=\=\=
 
 
-	NOTE: Make sure to single-quote the "output str" or escape dollar [$] signs!
+			\\--debug     Enable debug mode
 
+			\-\-version   Print version and exit
+
+
+	Usage:
+
+	\=\=\=\=\=
+
+
+		Some examples of usage could be:
+
+		* Extracting one or more groups from the input
+
+		* Omitting one or more groups from the input
+
+		* Rearranging the input
+
+		* Using some textual input (csv?) into a series of commands to execute
+
+		* Creating reports
+
+		* Many others!
+
+
+
+	Regex Pattern Format/Tips:
+
+	\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=\=
+
+		rextract supports extended regular expression syntax (perl-style), specifically
+
+		that provided by the standard python "re" module.
+
+		Some examples can be found at https://docs.python.org/3/howto/regex.html
+
+
+
+		Each pattern contained within parenthesis counts as a group.
+
+		Each group left-to-right is assigned a numerical value, starting with 1.
+
+
+		You can assign a name to a group like so: 
+
+
+			(?P<my_group_name>[a-zA-Z][a-zA-Z0-9]+)
+
+
+			^ This creates a group which you can reference as:
+
+
+			${my_group_name}
+
+
+		A group must start with a letter a-z or underscore ( ' _' ),
+
+		 and must only contain letters a-z (any case), numbers 0-9, or underscore.
+
+		Name a group like: (?P<name>.*)
+
+
+		If the regex does not start with "^" (starts-with operator) or ".*", a
+
+		 ".*" is implicitly prepended to the regex. This ensures that if your
+
+		 pattern defines a match in the middle of a line, it will still match
+
+		 as expected.
+
+		 
+
+	Output Format
+
+	\=\=\=\=\=\=\=\=\=\=\=\=\=
+
+
+		The "Output Format" argument can be though of exactly like a bash string -
+
+		characters all have their literal value except those preceded with an
+
+		un-escaped dollar ( $ ) sign. These represent groups, either numeric or
+
+		by-name. See the section above for more info on creating groups.
+
+
+		If the "Output Format" argument is omitted, the entire matched region will
+
+		be printed, line-by-line. This is equivalent to providing an 
+
+		"Output Format" of '${0}'.
+
+
+	Numeric Groups
+
+	\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+
+
+		Use ${1} or $1 for the first group, and ${3} for the third.
+
+		Numerical groups are assigned left-to-right as they appear in the regex,
+
+		even if the group is in a conditional, and despite nesting.
+
+
+		For example:
+
+			"((yellow|white) cheddar)|((whole|part-skim) mozerella)"
+
+			
+		"yellow|white cheddar" is the first group,
+
+		"yellow|white" is the second group
+
+		"whole|part-skim mozerella" is the third group
+
+		"whole|part-skim" is the fourth group.
+
+
+		If a group is not matched, it is assigned the value of an empty string.
+
+
+		Use the special group $0 or ${0]} to print the entire matched section.
+
+
+	Named Groups
+
+	\-\-\-\-\-\-\-\-\-\-\-\-
+
+
+		If you defined any groups to have a name (see section above on this topic),
+
+		i.e. (?P<my_group>...) , then you can reference that group in the output
+
+		as $my_group or ${my_group}.
+
+
+
+	NOTE: Make sure to single-quote the "Output Format" argument,
+
+		or escape dollar [$] signs (by using \$).
+
+
+	rextract version 1.0.0 by Tim Savannah
 
 
 Examples
