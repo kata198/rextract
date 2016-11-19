@@ -18,28 +18,108 @@ import re
 __version__ = '1.0.0'
 __version_tuple__ = (1, 0, 0)
 
+
+EXIT_CODE_CANT_COMPILE_REGEX = 2
+
+
 def getVersionInfo():
     return 'rextract version %s by Tim Savannah' %(__version__, )
 
 
 def usage():
-    sys.stderr.write('''Usage: rextract (Options) [reg pattern] ([Output Str])
-  Reads from stdin and applies regex pattern line-by-line.
+    sys.stderr.write('''Usage: rextract (Options) [regex pattern] ([output format])
+  Reads from stdin and applies provided regex pattern line-by-line,
+   optionally outputting in a format specified by "output format."
 
-    Options:
+ Options:
+ ========
 
         --debug     Enable debug mode
         --version   Print version and exit
 
-If output str is provided, will output the variables/groups captured in the regex pattern.
+ Usage:
+ =====
 
-Each pattern contained within parenthesis counts as a group.
-Name a group like: (?P<name>.*)
+    Some examples of usage could be:
+  
+    * Extracting one or more groups from the input
+    * Omitting one or more groups from the input
+    * Rearranging the input
+    * Using some textual input (csv?) into a series of commands to execute
+    * Creating reports
+    * Many others!
 
-Use ${1} or $1 for first group, use ${name} or $name for a name [ defined like (?P<name>.*) ]
-Use ${0} or $0 for entire matched string.
 
-NOTE: Make sure to single-quote the "output str" or escape dollar [$] signs!
+ Regex Pattern Format/Tips:
+ ==========================
+
+    rextract supports extended regular expression syntax (perl-style), specifically
+     that provided by the standard python "re" module.
+     Some examples can be found at https://docs.python.org/3/howto/regex.html
+
+
+    Each pattern contained within parenthesis counts as a group.
+    Each group left-to-right is assigned a numerical value, starting with 1.
+
+    You can assign a name to a group like so: 
+
+      (?P<my_group_name>[a-zA-Z][a-zA-Z0-9]+)
+
+      ^ This creates a group which you can reference as:
+
+        ${my_group_name}
+
+    A group must start with a letter a-z or underscore ( ' _' ),
+     and must only contain letters a-z (any case), numbers 0-9, or underscore.
+    Name a group like: (?P<name>.*)
+
+    If the regex does not start with "^" (starts-with operator) or ".*", a
+     ".*" is implicitly prepended to the regex. This ensures that if your
+     pattern defines a match in the middle of a line, it will still match
+     as expected.
+     
+
+ Output Format
+ =============
+
+    The "Output Format" argument can be though of exactly like a bash string -
+      characters all have their literal value except those preceded with an
+      un-escaped dollar ( $ ) sign. These represent groups, either numeric or
+      by-name. See the section above for more info on creating groups.
+
+    If the "Output Format" argument is omitted, the entire matched region will
+      be printed, line-by-line. This is equivalent to providing an 
+      "Output Format" of '${0}'.
+
+  Numeric Groups
+  --------------
+
+    Use ${1} or $1 for the first group, and ${3} for the third.
+      Numerical groups are assigned left-to-right as they appear in the regex,
+      even if the group is in a conditional, and despite nesting.
+
+      For example:
+        "((yellow|white) cheddar)|((whole|part-skim) mozerella)"
+        
+      "yellow|white cheddar" is the first group,
+      "yellow|white" is the second group
+      "whole|part-skim mozerella" is the third group
+      "whole|part-skim" is the fourth group.
+
+      If a group is not matched, it is assigned the value of an empty string.
+
+    Use the special group $0 or ${0]} to print the entire matched section.
+
+  Named Groups
+  ------------
+
+    If you defined any groups to have a name (see section above on this topic),
+      i.e. (?P<my_group>...) , then you can reference that group in the output
+      as $my_group or ${my_group}.
+
+
+  NOTE: Make sure to single-quote the "Output Format" argument,
+    or escape dollar [$] signs (by using \$).
 ''')
     sys.stderr.write('\n%s\n\n' %(getVersionInfo(), ))
 
@@ -52,19 +132,29 @@ class MatchPrinter(object):
         MatchPrinter - Main class for dealing with matching and printing
     '''
 
-    def __init__(self, matchStr):
+    def __init__(self, outputFormat):
         '''
             __init__ - Construct.
 
-            @param matchStr <str> - The requested output match string (see #usage method for format).
+            @param outputFormat <str> - The requested output match string (see #usage method for format).
         '''
-        self.matchStr = matchStr
 
+        # self.outputFormat - The requested output format (string with bash-style variables
+        #  for marking where matched groups should be inserted)
+        self.outputFormat = outputFormat
+
+        # self.printNames - Named groups in outputStr.
+        #  Example:
+        #    (?P<abc>[0-9]+)  in 'reg pattern' argument defines group "abc" as 1+ digits
+        #    $abc or ${abc} in 
         self.printNames = []
         self.printGroups = []
-        if matchStr:
-            self.matchStr = matchStr = matchStr.replace("\\t", "\t")
-            matchNames = re.findall(r'[$][\{]{0,1}(?P<name>[a-zA-Z0-9_]+)[\}]{0,1}', matchStr)
+
+        if outputFormat:
+            self.outputFormat = outputFormat = outputFormat.replace("\\t", "\t")
+            # A valid group name starts with a-z or A-Z or _, then may contain those or in addition 0-9 for
+            #  following characters.
+            matchNames = re.findall(r'[$][\{]{0,1}(?P<name>[a-zA-Z_][a-zA-Z0-9_]*)[\}]{0,1}', outputFormat)
             for name in matchNames:
                 if name.isdigit():
                     self.printGroups.append(int(name))
@@ -77,18 +167,18 @@ class MatchPrinter(object):
 
     def printMatchStr(self, matchObj):
         '''
-            printMatchStr - Print a match, formatted to "matchStr" as provided in __init__
+            printMatchStr - Print a match, formatted to "outputFormat" as provided in __init__
 
             @param matchObj <SRE_Match object> - A match object
         '''
 
         line = matchObj.string
-        matchStr = self.matchStr
+        outputFormat = self.outputFormat
 
         global isDebug
 
-        if not matchStr:
-            print ( line )
+        if not outputFormat:
+            print ( matchObj.string[matchObj.start() : matchObj.end()] )
             return
 
         groupDict = matchObj.groupdict()
@@ -114,7 +204,7 @@ class MatchPrinter(object):
                 else:
                     replaceWith = orderedGroups[printGroup-1]
 
-                matchStr = re.sub(toReplace, replaceWith, matchStr)
+                outputFormat = re.sub(toReplace, replaceWith, outputFormat)
             except Exception as e:
                 if isDebug is True:
                     sys.stderr.write('DEBUG: Got exception replacing ${%d} : %s\n' %(printGroup, str(e)))
@@ -131,13 +221,13 @@ class MatchPrinter(object):
                     if isDebug is True:
                         sys.stderr.write('DEBUG: No group found matching name: %s\n' %(printName,))
 
-                matchStr = re.sub(toReplace, replaceWith, matchStr)
+                outputFormat = re.sub(toReplace, replaceWith, outputFormat)
 
             except Exception as e:
                 if isDebug is True:
                     sys.stderr.write('DEBUG: Got exception replacing ${%s} : %s\n' %(printName, str(e)))
 
-        print ( matchStr )
+        print ( outputFormat )
 
 
 
@@ -224,6 +314,8 @@ def handleParseError(pattern, exception):
         @param exception <Exception> - exception raised when compiling pattern
 
     '''
+
+    # TODO: Provide tips on some common error message.
 
     # On python 3 (and maybe eventually backported to 2.7, though not yet
     #  as of 2.7.12 ) the regex engine reports position of syntax error
@@ -335,17 +427,16 @@ if __name__ == '__main__':
             regex = re.compile(pattern)
         except Exception as e:
             handleParseError(pattern, e)
-#            sys.stderr.write('Cannot compile pattern: "%s" (%s)\n' %(pattern, str(e)))
-            sys.exit(2)
+            sys.exit(EXIT_CODE_CANT_COMPILE_REGEX)
 
         if len(args) == 1:
-            matchStr = ''
+            outputFormat = ''
         else:
-            matchStr = ' '.join(args[1:])
-            if not matchStr:
+            outputFormat = ' '.join(args[1:])
+            if not outputFormat:
                 sys.stderr.write('Warning: match string provided but empty. Did you forget to use single-quotes or escape $?\n')
 
-        matchPrinter = MatchPrinter(matchStr)
+        matchPrinter = MatchPrinter(outputFormat)
 
         try:
             _readline = sys.stdin.buffer.readline
@@ -357,6 +448,7 @@ if __name__ == '__main__':
         except AttributeError:
             readline = _readline = sys.stdin.readline
 
+        
         line = None
         while True:
             try:
