@@ -1,3 +1,12 @@
+* 1.1.0 - Nov 15 2018
+
+- Fix issue when literal \n (a backslash and an n) appeared in the output.
+
+- Fix where newline and carriage return in output format wasn't being respected.
+
+- Fix some escaping issues
+
+
 * 1.0.0 - Nov 19 2016
 - Add setup.py, MANIFEST.in, README.rst to prepare for pypi distribution
 - Expand READMEs to contain a lot more info, better formatting, etc
