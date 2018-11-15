@@ -524,11 +524,8 @@ if __name__ == '__main__':
 
         matchPrinter = MatchPrinter(outputFormat)
 
-        f = open('test', 'rt')
-
         try:
-            #_readline = sys.stdin.buffer.readline
-            _readline = f.buffer.readline
+            _readline = sys.stdin.buffer.readline
             defaultEncoding = sys.getdefaultencoding()
             def readline():
                 line = _readline()
