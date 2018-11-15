@@ -28,7 +28,7 @@ if __name__ == '__main__':
         long_description = summary
 
     setup(name='rextract',
-            version='1.0.0',
+            version='1.1.0',
             scripts=['rextract'],
             author='Tim Savannah',
             author_email='kata198@gmail.com',
@@ -53,6 +53,8 @@ if __name__ == '__main__':
                          'Programming Language :: Python :: 3',
                          'Programming Language :: Python :: 3.4',
                          'Programming Language :: Python :: 3.5',
+                         'Programming Language :: Python :: 3.6',
+                         'Programming Language :: Python :: 3.7',
             ]
     )
 
