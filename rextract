@@ -2,7 +2,7 @@
 '''
     rextract - Regular expression string EXTRACTion.
 
-    Copyright (c) 2016 Tim Savannah All Rights Reserved
+    Copyright (c) 2016, 2018 Tim Savannah All Rights Reserved
 
     Licensed for use under terms of the Gnu General Public License (GPL) Version 3 or Later
 
@@ -20,6 +20,18 @@ __version_tuple__ = (1, 0, 0)
 
 
 EXIT_CODE_CANT_COMPILE_REGEX = 2
+
+
+TAB_REPLACE_PATTERN = re.compile('[^\\][\\][t]')
+NEWLINE_REPLACE_PATTERN = re.compile('[^\\][\\][n]')
+CR_REPLACE_PATTERN = re.compile('[^\\][\\][r]')
+
+# OUTPUT_FORMAT_REPLACE_PATTERNS - Will be iterated over to cleanup output format, since
+#    re.sub has strange rules on slashes
+OUTPUT_FORMAT_REPLACE_PATTERNS = [ (TAB_REPLACE_PATTERN, '\t'), (NEWLINE_REPLACE_PATTERN, '\n'), (CR_REPLACE_PATTERN, '\r') ]
+
+
+ESCAPE_FIX_PATTERN = re.compile(r"[^\\]([\\](?P<escape_char>[tnr]))")
 
 
 def getVersionInfo():
@@ -154,7 +166,76 @@ class MatchPrinter(object):
         self.printGroups = []
 
         if outputFormat:
-            self.outputFormat = outputFormat = outputFormat.replace("\\t", "\t")
+            #outputFormat = self.outputFormat.replace('\\', '\\\\')
+
+            newOutputFormatLst = []
+
+            prevIdx = 0
+
+            offsetSpan = 0
+
+            remainingOutputFormat = outputFormat[:]
+            while remainingOutputFormat.startswith('\\'):
+                if len(remainingOutputFormat) < 2:
+                    break
+                thisEscapedChar = remainingOutputFormat[1]
+                if thisEscapedChar == 'n':
+                    newOutputFormatLst.append('\n')
+                elif thisEscapedChar == 'r':
+                    newOutputFormatLst.append('\r')
+                elif thisEscapedChar == 't':
+                    newOutputFormatLst.append('\t')
+                else:
+                    newOutputFormatLst.append(remainingOutputFormat[:2])
+
+                remainingOutputFormat = remainingOutputFormat[2:]
+
+            matchObj = ESCAPE_FIX_PATTERN.search(remainingOutputFormat)
+
+            while matchObj:
+            #for matchObj in ESCAPE_FIX_PATTERN.finditer(outputFormat):
+                thisSpan = matchObj.span()
+
+                (spanStart, spanEnd) = (thisSpan[0] - offsetSpan , thisSpan[1] + offsetSpan)
+                thisEscapedChar = matchObj.groupdict()['escape_char']
+
+
+                newOutputFormatLst.append( remainingOutputFormat[0 : spanStart + 1] )
+                if thisEscapedChar == 'n':
+                    newOutputFormatLst.append('\n')
+                elif thisEscapedChar == 'r':
+                    newOutputFormatLst.append('\r')
+                elif thisEscapedChar == 't':
+                    newOutputFormatLst.append('\t')
+
+                remainingOutputFormat = remainingOutputFormat[spanEnd : ]
+
+                while remainingOutputFormat.startswith('\\'):
+                    if len(remainingOutputFormat) < 2:
+                        break
+                    thisEscapedChar = remainingOutputFormat[1]
+                    if thisEscapedChar == 'n':
+                        newOutputFormatLst.append('\n')
+                    elif thisEscapedChar == 'r':
+                        newOutputFormatLst.append('\r')
+                    elif thisEscapedChar == 't':
+                        newOutputFormatLst.append('\t')
+                    elif thisEscapedChar == '\\':
+                        newOutputFormatLst.append('\\')
+
+                    remainingOutputFormat = remainingOutputFormat[2:]
+
+                matchObj = ESCAPE_FIX_PATTERN.search(remainingOutputFormat)
+
+                        
+
+            newOutputFormatLst.append( remainingOutputFormat )
+            #for (subPattern, replaceWith) in OUTPUT_FORMAT_REPLACE_PATTERNS:
+            #    outputFormat = subPattern.sub(outputFormat, replaceWith)
+
+            self.outputFormat = outputFormat = ''.join(newOutputFormatLst)
+                
+            #self.outputFormat = outputFormat = outputFormat.replace("\\t", "\t").replace('\\n', '\n').replace('\\r', '\r')
             # A valid group name starts with a-z or A-Z or _, then may contain those or in addition 0-9 for
             #  following characters.
             matchNames = re.findall(r'[$][\{]{0,1}(?P<name>[a-zA-Z0-9_]+)[\}]{0,1}', outputFormat)
@@ -207,9 +288,11 @@ class MatchPrinter(object):
                 toReplace = r'[$][\{]{0,1}%d[\}]{0,1}' %(printGroup,)
                 if printGroup == 0:
                     replaceWith = matchObj.string[matchObj.start() : matchObj.end()]
-                    replaceWith = orderedGroups[0]
+                    #replaceWith = orderedGroups[0]
                 else:
                     replaceWith = orderedGroups[printGroup]
+
+                replaceWith = replaceWith.replace("\\", "\\\\")
 
                 outputFormat = re.sub(toReplace, replaceWith, outputFormat)
             except Exception as e:
@@ -458,8 +541,11 @@ if __name__ == '__main__':
 
         matchPrinter = MatchPrinter(outputFormat)
 
+        f = open('test', 'rt')
+
         try:
-            _readline = sys.stdin.buffer.readline
+            #_readline = sys.stdin.buffer.readline
+            _readline = f.buffer.readline
             defaultEncoding = sys.getdefaultencoding()
             def readline():
                 line = _readline()
@@ -483,6 +569,7 @@ if __name__ == '__main__':
 
             matchObj = regex.search(line)
             if matchObj:
+                #import pdb; pdb.set_trace()
                 matchPrinter.printMatchStr(matchObj)
 
         sys.exit(0)
