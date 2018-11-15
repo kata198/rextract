@@ -21,16 +21,6 @@ __version_tuple__ = (1, 1, 0)
 
 EXIT_CODE_CANT_COMPILE_REGEX = 2
 
-
-TAB_REPLACE_PATTERN = re.compile('[^\\][\\][t]')
-NEWLINE_REPLACE_PATTERN = re.compile('[^\\][\\][n]')
-CR_REPLACE_PATTERN = re.compile('[^\\][\\][r]')
-
-# OUTPUT_FORMAT_REPLACE_PATTERNS - Will be iterated over to cleanup output format, since
-#    re.sub has strange rules on slashes
-OUTPUT_FORMAT_REPLACE_PATTERNS = [ (TAB_REPLACE_PATTERN, '\t'), (NEWLINE_REPLACE_PATTERN, '\n'), (CR_REPLACE_PATTERN, '\r') ]
-
-
 ESCAPE_FIX_PATTERN = re.compile(r"[^\\]([\\](?P<escape_char>[tnr]))")
 
 
@@ -170,10 +160,6 @@ class MatchPrinter(object):
 
             newOutputFormatLst = []
 
-            prevIdx = 0
-
-            offsetSpan = 0
-
             remainingOutputFormat = outputFormat[:]
             while remainingOutputFormat.startswith('\\'):
                 if len(remainingOutputFormat) < 2:
@@ -196,7 +182,7 @@ class MatchPrinter(object):
             #for matchObj in ESCAPE_FIX_PATTERN.finditer(outputFormat):
                 thisSpan = matchObj.span()
 
-                (spanStart, spanEnd) = (thisSpan[0] - offsetSpan , thisSpan[1] + offsetSpan)
+                (spanStart, spanEnd) = (thisSpan[0] , thisSpan[1])
                 thisEscapedChar = matchObj.groupdict()['escape_char']
 
 
@@ -227,11 +213,8 @@ class MatchPrinter(object):
 
                 matchObj = ESCAPE_FIX_PATTERN.search(remainingOutputFormat)
 
-                        
 
             newOutputFormatLst.append( remainingOutputFormat )
-            #for (subPattern, replaceWith) in OUTPUT_FORMAT_REPLACE_PATTERNS:
-            #    outputFormat = subPattern.sub(outputFormat, replaceWith)
 
             self.outputFormat = outputFormat = ''.join(newOutputFormatLst)
                 
