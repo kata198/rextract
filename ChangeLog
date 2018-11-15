@@ -1,3 +1,8 @@
+* 1.1.1 - Nov 15 2018
+
+- Bump version to 1.1.1 to move beyond whomever took my project, changed themselves to be the author and stuck it on pypi.
+
+
 * 1.1.0 - Nov 15 2018
 
 - Fix issue when literal \n (a backslash and an n) appeared in the output.

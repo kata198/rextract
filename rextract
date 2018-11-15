@@ -15,8 +15,8 @@ import shutil
 import subprocess
 import re
 
-__version__ = '1.1.0'
-__version_tuple__ = (1, 1, 0)
+__version__ = '1.1.1'
+__version_tuple__ = (1, 1, 1)
 
 
 EXIT_CODE_CANT_COMPILE_REGEX = 2
